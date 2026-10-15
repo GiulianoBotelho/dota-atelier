@@ -16,7 +16,7 @@ O catálogo mostra 25 arcanas e o conjunto Immortal Axe Unleashed; Tidehunter te
 
 ## Como as skins são preparadas
 
-O Dota contém recursos oficiais dos itens nos seus VPKs, mas não contém a montagem de substituição de cada mod. Os pacotes comunitários incluem modelos compilados e adaptados para substituir o herói base. Só copiar o modelo oficial de arcana para outro caminho não produz essa montagem e pode deixar peças, retrato ou efeitos incorretos. Por isso, o Atelier baixa e filtra uma fonte comunitária conhecida em vez de tentar inferir uma montagem a partir dos arquivos oficiais.
+O Dota contém recursos oficiais dos itens nos seus VPKs. Cada receita define quais arquivos podem substituir o corpo e as peças padrão e quais dependências precisam ser preservadas. A receita do Wraith King usa os modelos oficiais locais atuais; as demais ainda usam os modelos adaptados da fonte comunitária fixada. Trocar caminhos de arquivos não garante que animações, estilos e efeitos controlados pelo equipamento da conta sejam compatíveis. Esses casos precisam ser verificados no jogo.
 
 O VPK montado fica em `%LOCALAPPDATA%\\DotaAtelier\\skins`. O Atelier verifica CRC, limites, extensões de recurso, dependências e dados de retrato antes de aplicar o pacote. Rejeita scripts executáveis, configurações e tabelas de itens; a única exceção na pasta `scripts` é o dado de câmera `scripts/npc/portraits.txt`, limitado ao bloco do herói. Se os VPKs oficiais usados na montagem mudarem, o cache é invalidado e a próxima ativação prepara novamente a skin. Um pacote aceito estruturalmente ainda precisa ser conferido no jogo; um novo formato de modelo pode exigir uma nova receita e uma atualização do app.
 
