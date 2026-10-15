@@ -193,7 +193,7 @@ class PortabilityTests(unittest.TestCase):
         archive = self.root/'source.zip'
         with ZipFile(archive, 'w') as output: output.write(source, 'hero.vpk')
         def simulate_update(_entries): (self.game/'dota/pak01_dir.vpk').write_bytes(b'new official bytes')
-        with patch.object(builder, '_download_zip', return_value=archive), patch.object(builder, '_apply_wearables', return_value={}), patch.object(builder, '_validate_references', side_effect=simulate_update):
+        with patch.object(builder, '_download_zip', return_value=archive), patch.object(builder, '_apply_wearables', return_value={}), patch.object(builder, '_validate_references', side_effect=simulate_update), patch.object(builder, '_validate_model_includes', return_value=0):
             with self.assertRaisesRegex(ValueError, 'atualizou durante'):
                 builder.prepare('razor', 'razor')
         self.assertFalse(list(builder.skin_dir.glob('*.vpk')))

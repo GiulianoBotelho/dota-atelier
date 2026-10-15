@@ -22,13 +22,13 @@ O VPK montado fica em `%LOCALAPPDATA%\\DotaAtelier\\skins`. O Atelier verifica C
 
 Fonte pública de montagem: [Dota2PornFxWeb](https://github.com/h6rd/Dota2PornFxWeb). O botão **Catálogo público** abre o repositório de origem. O app não executa instaladores de terceiros.
 
-Desde a versão 0.2.1, a montagem lê a tabela oficial de itens para substituir visualmente também os cosméticos convencionais já equipados, pelo modelo esperado de cada slot. Essa tabela não é alterada nem incluída no VPK. Modelos genéricos ou compartilhados entre heróis são preservados. Personas ficam fora dessa compatibilização; partículas de itens e todas as combinações possíveis ainda precisam de conferência no jogo. Veja o [relatório de validação por herói](VALIDATION.md).
+Desde a versão 0.2.1, a montagem lê a tabela oficial de itens para substituir visualmente também os cosméticos convencionais já equipados, pelo modelo esperado de cada slot. Essa tabela não é alterada nem incluída no VPK. A 0.2.2 também cobre trocas de modelo entre slots, preserva includes de animação e monta o WK com modelos oficiais locais. Atividades, estilos e efeitos do equipamento real ainda podem interferir no resultado; não há validação visual completa de todas as combinações. Modelos genéricos ou compartilhados entre heróis são preservados. Personas ficam fora dessa compatibilização; partículas de itens e todas as combinações possíveis ainda precisam de conferência no jogo. Veja o [relatório de validação por herói](VALIDATION.md).
 
 ## Atualizar o aplicativo
 
 Feche o Atelier, baixe **DotaAtelier-Compartilhar.zip** da release nova e extraia a pasta inteira. Abra o novo **DotaAtelier.exe** junto da sua pasta `_internal`. Não substitua somente o executável. Backups e sessão permanecem em `%LOCALAPPDATA%\\DotaAtelier`; não apague nem transfira essa pasta entre PCs.
 
-Na versão 0.2.1, as montagens antigas precisam ser refeitas. Se uma arcana já estiver ativa, use **Atualizar arcana**, com o Dota fechado, para aplicar a montagem nova. Apenas atualizar o aplicativo não troca automaticamente o VPK que já está ativo.
+Na versão 0.2.2, as montagens antigas precisam ser refeitas. Se uma arcana já estiver ativa, use **Atualizar arcana**, com o Dota fechado, para aplicar a montagem nova. Apenas atualizar o aplicativo não troca automaticamente o VPK que já está ativo.
 
 ## O que o app altera
 

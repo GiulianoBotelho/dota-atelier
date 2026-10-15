@@ -105,6 +105,87 @@ class CosmeticSchemaTests(unittest.TestCase):
     def test_recipe_change_invalidates_signature(self):
         self.assertNotEqual(recipe_signature({'id': 'a'}), recipe_signature({'id': 'b'}))
 
+    def test_wearable_model_modifier_is_mapped_to_slot(self):
+        from cosmetic_schema import item_model_owners
+        schema = self.schema()
+        schema['items']['2']['visuals'] = {'asset_modifier': {
+            'type': 'model', 'asset': schema['items']['2']['model_player'],
+            'modifier': 'models/items/spectre/replacement_hat.vmdl'}}
+        aliases, _ = wearable_aliases(schema, 'spectre', {self.default})
+        self.assertEqual(aliases['models/items/spectre/replacement_hat.vmdl_c'], self.default)
+        self.assertEqual(item_model_owners(schema)['models/items/spectre/replacement_hat.vmdl_c'], {self.unit})
+
+    def test_model_modifier_cannot_replace_another_hero(self):
+        schema = self.schema()
+        schema['items']['2']['visuals'] = {'asset_modifier': {
+            'type': 'model', 'asset': 'models/items/lina/hat.vmdl',
+            'modifier': 'models/items/spectre/replacement_hat.vmdl'}}
+        aliases, _ = wearable_aliases(schema, 'spectre', {self.default})
+        self.assertNotIn('models/items/spectre/replacement_hat.vmdl_c', aliases)
+
+    def test_cross_slot_modifier_uses_replaced_asset_slot(self):
+        schema = self.schema()
+        belt = 'models/heroes/spectre/belt.vmdl_c'
+        schema['items']['3'] = {'prefab': 'default_item', 'item_slot': 'belt',
+            'model_player': belt[:-2], 'used_by_heroes': {self.unit: '1'}}
+        schema['items']['4'] = {'item_slot': 'belt', 'used_by_heroes': {self.unit: '1'},
+            'model_player': 'models/items/spectre/belt.vmdl', 'visuals': {'asset_modifier': {
+                'type': 'model', 'asset': schema['items']['2']['model_player'],
+                'modifier': 'models/items/spectre/replacement_hat.vmdl'}}}
+        aliases, _ = wearable_aliases(schema, 'spectre', {self.default, belt})
+        self.assertEqual(aliases['models/items/spectre/replacement_hat.vmdl_c'], self.default)
+
+    def test_animation_include_is_preserved_instead_of_becoming_parent(self):
+        from skin_builder import SkinBuilder
+        from unittest.mock import patch
+        from cosmetic_schema import item_model_owners
+        schema = self.schema()
+        body = 'models/heroes/spectre/spectre.vmdl_c'
+        include = 'models/items/spectre/owned_hat.vmdl_c'
+        builder = SkinBuilder.__new__(SkinBuilder)
+        builder.game = Path('synthetic-game')
+        builder._official_entry = lambda path: b'schema' if path.endswith('items_game.txt') else b'official'
+        builder._official_context = lambda: []
+        entries = {body: b'parent', self.default: b'canonical', include: b'original include'}
+        with patch.object(SkinBuilder, '_schema_cache', (str(builder.game)+'unused', schema, {})), \
+             patch('skin_builder.read_schema', return_value=schema), \
+             patch('skin_builder.references', side_effect=lambda data: [include[:-2]] if data==b'parent' else []):
+            report = builder._apply_wearables(entries, 'spectre')
+        self.assertEqual(entries[include], b'original include')
+        self.assertEqual(report['preserved_model_dependencies'][include], [body])
+
+    def test_native_models_do_not_inherit_old_community_dependencies(self):
+        from skin_builder import SkinBuilder
+        builder = SkinBuilder.__new__(SkinBuilder)
+        builder._official_entry = lambda path: b'native animation and geometry'
+        target = 'models/heroes/wraith_king/wraith_king.vmdl_c'
+        source = 'models/items/wraith_king/arcana/wraith_king_arcana.vmdl_c'
+        entries = {target: b'old', 'particles/old.vpcf_c': b'old fx',
+                   'materials/old.vmat_c': b'old material', 'panorama/images/icon.vtex_c': b'icon'}
+        result = builder._local_models({'local_models': {target: source}}, entries)
+        self.assertEqual(result, {target: b'native animation and geometry', 'panorama/images/icon.vtex_c': b'icon'})
+
+    def test_model_cycle_is_rejected_even_through_official_include(self):
+        from skin_builder import SkinBuilder
+        from unittest.mock import patch
+        builder = SkinBuilder.__new__(SkinBuilder)
+        builder._official_entry = lambda path: b'official include'
+        entries = {'models/parent.vmdl_c': b'parent'}
+        refs = {b'parent': ['models/include.vmdl'], b'official include': ['models/parent.vmdl']}
+        with patch('skin_builder.references', side_effect=lambda data: refs[data]):
+            with self.assertRaisesRegex(ValueError, 'circular'):
+                builder._validate_model_includes(entries)
+
+    def test_shared_animation_include_is_not_a_cycle(self):
+        from skin_builder import SkinBuilder
+        from unittest.mock import patch
+        builder = SkinBuilder.__new__(SkinBuilder)
+        builder._official_entry = lambda path: b'official include'
+        entries = {'models/a.vmdl_c': b'parent', 'models/b.vmdl_c': b'parent'}
+        with patch('skin_builder.references', side_effect=lambda data:
+                   ['models/include.vmdl'] if data==b'parent' else []):
+            self.assertEqual(builder._validate_model_includes(entries), 3)
+
     def test_dynamic_packages_accept_cosmetic_snapshots_and_voice_events_but_not_scripts(self):
         from manager import validate_vpk
         with tempfile.TemporaryDirectory() as folder:
@@ -132,6 +213,22 @@ class CosmeticSchemaTests(unittest.TestCase):
             calls=[];app.start_change=lambda *args:calls.append(args)
             app.toggle()
             self.assertFalse(calls[0][2])
+
+    def test_legacy_import_does_not_mask_invalidated_generated_cache(self):
+        from desktop_ui import App
+        from packages import CATALOG
+        from types import SimpleNamespace
+        item = next(p for p in CATALOG['heroes'] if p['hero']=='skeleton_king')
+        with tempfile.TemporaryDirectory() as folder:
+            app=App.__new__(App)
+            app.kind='skin';app.hero='skeleton_king';app.assets=Path(folder)
+            app.library=SimpleNamespace(generated_skin=lambda *_:None,
+                imported_skin=lambda *_:{**item, 'package_path':'legacy.vpk'})
+            app.current={'slots':{},'conflict':None}
+            _, selected=app.selected()
+            self.assertTrue(selected['needs_rebuild'])
+            self.assertFalse(selected['available'])
+            self.assertNotIn('package_path',selected)
 
 
 if __name__ == '__main__': unittest.main()

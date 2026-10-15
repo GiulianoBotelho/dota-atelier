@@ -2833,7 +2833,16 @@
         "pinkie/models/wk_base_pinkie/wk_base_arcana_base_vmorf.vtex_c": "pinkie/models/wraith_king/wk_base_arcana_base_vmorf.vtex_c"
       },
       "source_label": "Wraith King Arcana",
-      "source_sha256": "2c559b0b438ff83ea4270691db6bfa6f5b5a72810f13a4484c1e179adbf21de8"
+      "source_sha256": "2c559b0b438ff83ea4270691db6bfa6f5b5a72810f13a4484c1e179adbf21de8",
+      "local_models": {
+        "models/heroes/wraith_king/wraith_king.vmdl_c": "models/items/wraith_king/arcana/wraith_king_arcana.vmdl_c",
+        "models/heroes/wraith_king/wraith_king_cape.vmdl_c": "models/items/wraith_king/arcana/wraith_king_arcana_back.vmdl_c",
+        "models/heroes/wraith_king/wraith_king_chest.vmdl_c": "models/items/wraith_king/arcana/wraith_king_arcana_armor.vmdl_c",
+        "models/heroes/wraith_king/wraith_king_gauntlet.vmdl_c": "models/items/wraith_king/arcana/wraith_king_arcana_arms.vmdl_c",
+        "models/heroes/wraith_king/wraith_king_head.vmdl_c": "models/items/wraith_king/arcana/wraith_king_arcana_head.vmdl_c",
+        "models/heroes/wraith_king/wraith_king_shoulder.vmdl_c": "models/items/wraith_king/arcana/wraith_king_arcana_shoulder.vmdl_c",
+        "models/heroes/wraith_king/wraith_king_weapon.vmdl_c": "models/items/wraith_king/arcana/wraith_king_arcana_weapon.vmdl_c"
+      }
     },
     "earthshaker": {
       "id": "earthshaker",

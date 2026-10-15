@@ -3,7 +3,7 @@ import re
 import hashlib
 import json
 
-ASSEMBLY_REVISION = 2
+ASSEMBLY_REVISION = 3
 INVISIBLE_MODEL = 'models/development/invisiblebox.vmdl_c'
 
 
@@ -112,7 +112,8 @@ def item_model_owners(schema):
         if not isinstance(users, dict): continue
         for node in _walk(item):
             paths = [_model(node.get('model_player'))]
-            if node.get('type') == 'entity_model': paths.append(_model(node.get('modifier')))
+            if node.get('type') in ('entity_model', 'model'):
+                paths.append(_model(node.get('modifier')))
             for path in paths:
                 if path: owners.setdefault(path, set()).update(users)
     return owners
@@ -140,6 +141,13 @@ def wearable_aliases(schema, hero, available_defaults, base_model=None, owners=N
         if slot and path in available_defaults:
             defaults.setdefault(slot, set()).add(path)
     defaults = {slot: next(iter(paths)) for slot, paths in defaults.items() if len(paths) == 1}
+    model_targets = {}
+    for _item_id, item in items:
+        target = defaults.get(item.get('item_slot'))
+        if not target: continue
+        for node in _walk(item):
+            path = _model(node.get('model_player'))
+            if path: model_targets.setdefault(path, set()).add(target)
     candidates, skipped = {}, []
     for item_id, item in items:
         users = item['used_by_heroes']
@@ -157,6 +165,14 @@ def wearable_aliases(schema, hero, available_defaults, base_model=None, owners=N
             source = _model(node.get('model_player'))
             if source and source != target and source not in defaults.values():
                 candidates.setdefault(source, set()).add(target)
+            # Some sets replace another wearable through a model modifier rather
+            # than model_player (including style-specific replacements).
+            if node.get('type') == 'model':
+                source = _model(node.get('modifier'))
+                asset = _model(node.get('asset'))
+                if (source and asset and source != target and source not in defaults.values()
+                        and owners.get(asset) == {unit}):
+                    candidates.setdefault(source, set()).update(model_targets.get(asset, set()))
     # Ambiguous shared model paths cannot be assigned to a different slot safely.
     shared_models = sorted(source for source in candidates
         if not source.startswith(('models/items/', 'models/heroes/'))

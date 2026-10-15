@@ -307,13 +307,18 @@ class App:
             local=None
             item['package_error']=str(exc)
         if not local:
-            try:local=self.library.imported_skin(self.hero,template['id'])
+            try:
+                legacy=self.library.imported_skin(self.hero,template['id'])
+                if legacy:
+                    # Imported packages predate the assembly checks. Falling
+                    # back here would silently reactivate the old broken VPK.
+                    item['needs_rebuild']=True
             except (OSError,ValueError) as exc:
                 item['package_error']=str(exc)
         if local:item.update(local)
         else:
             bundled=self.assets/template['file']
-            if bundled.is_file():item['package_path']=str(bundled)
+            if bundled.is_file() and not item.get('needs_rebuild'):item['package_path']=str(bundled)
         item['available']=bool(item.get('package_path'))
         active=self.current['slots'].get('skin:'+self.hero)
         if active and active['id']==item['id'] and not item['available']:
@@ -355,7 +360,7 @@ class App:
                 for widget in (option,picture,caption): widget.bind('<Button-1>',lambda _,entry=style:self.select_style(entry))
             description='Escolha a aparência antes de ativar. O estilo local não altera a evolução do item na sua conta.'
         elif self.kind=='map': description='Substitui o terreno no seu cliente. O mapa e as arcanas podem permanecer ativos juntos.'
-        else: description='A montagem substitui também as peças convencionais que você já tem equipadas, apenas neste cliente. Seu inventário não muda. Personas não são suportadas nesta versão.'
+        else: description='Montagem experimental. Itens equipados podem alterar animações, cores e efeitos; se houver mistura, teste com o conjunto padrão. Seu inventário não muda. Personas não são suportadas.'
         self.description.configure(text=description)
         if active and not same:
             description += '\nAtivo agora: '+active.get('name',active['id'])
@@ -365,6 +370,7 @@ class App:
             text='DESATIVAR CONJUNTO' if same else 'ATIVAR CONJUNTO'
         disabled = self.busy or self.running or bool(self.current['conflict']) or bool(item.get('missing_references')) or (self.kind=='map' and not item.get('generated') and not same)
         if self.kind=='skin' and not item.get('available') and not same:text='ATUALIZAR ARCANA' if item.get('needs_rebuild') else 'BAIXAR E ATIVAR ARCANA'
+        if self.kind=='skin' and active and active['id']==item['id'] and not same:text='ATUALIZAR ARCANA'
         if self.kind=='map' and not item.get('generated') and not same:text='GERANDO COM ARQUIVOS LOCAIS…'
         self.toggle_button.configure(text='APLICANDO…' if self.busy else text,state='disabled' if disabled else 'normal',bg='#343b34' if disabled else RED)
         if self.kind=='skin':

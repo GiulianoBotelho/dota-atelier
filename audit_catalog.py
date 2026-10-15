@@ -42,9 +42,13 @@ def audit(game, cache, output, seed_zips=None):
             verified = 0
             for source, target in aliases.items():
                 if source in compatibility['missing_item_models']: continue
+                if source in compatibility['preserved_model_dependencies']: continue
                 if resources[source] != resources[target]:
                     raise ValueError('Wearable does not match its canonical slot: '+source)
                 verified += 1
+            for target, source in recipe.get('local_models', {}).items():
+                if resources[target] != builder._official_entry(source):
+                    raise ValueError('Native model differs from the installed official resource: '+target)
             result = {'hero': hero, 'skin': skin, 'ok': True, 'resources': len(resources),
                       'bytes': Path(report['package_path']).stat().st_size, 'sha256': report['sha256'],
                       'verified_model_aliases': verified, 'compatibility': compatibility,

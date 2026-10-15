@@ -186,16 +186,47 @@ class SkinBuilder:
         base_model = PORTRAIT_MODELS.get(hero)
         base_model = base_model+'_c' if base_model else None
         aliases, report = wearable_aliases(cached[1], hero, available, base_model, cached[2])
+        # An include model must retain its original payload. Replacing it with
+        # its parent can create recursive animation includes (CM in particular).
+        dependencies = {}
+        for resource, payload in entries.items():
+            if not resource.endswith('.vmdl_c'): continue
+            for reference in references(payload):
+                compiled = reference if reference.endswith('_c') else reference+'_c'
+                if compiled.endswith('.vmdl_c') and compiled in aliases:
+                    dependencies.setdefault(compiled, []).append(resource)
+        aliases = {source: target for source, target in aliases.items() if source not in dependencies}
+        report['preserved_model_dependencies'] = dependencies
+        # Freeze canonical payloads before assigning any alias. An item model
+        # can itself be a target of another mapping.
+        targets = {target: entries[target] if target in entries else self._official_entry(target)
+                   for target in set(aliases.values())}
         missing = []
         for source, target in aliases.items():
             if source not in available:
                 missing.append(source)
                 continue
-            if target not in entries: entries[target] = self._official_entry(target)
-            entries[source] = entries[target]
+            if target not in entries: entries[target] = targets[target]
+            entries[source] = targets[target]
         report['missing_item_models'] = sorted(missing)
         report['applied_aliases'] = len(aliases)-len(missing)
         return report
+
+    def _local_models(self, recipe, entries):
+        mapping = recipe.get('local_models', {})
+        if not mapping: return entries
+        # For recipes migrated to current official animation data, keep only
+        # public UI artwork. Old particles/models/materials cannot override
+        # dependencies of the native model that replaces them.
+        result = {path: data for path, data in entries.items() if path.startswith('panorama/')}
+        for target, source in mapping.items():
+            if (not target.startswith(('models/heroes/', 'models/items/'))
+                    or not source.startswith('models/items/')
+                    or not target.endswith('.vmdl_c') or not source.endswith('.vmdl_c')
+                    or '..' in target.split('/') or '..' in source.split('/')):
+                raise ValueError('Receita de modelos oficiais inválida.')
+            result[target] = self._official_entry(source)
+        return result
 
     @staticmethod
     def _replace_hero_block(data, source_model, hero_model):
@@ -259,6 +290,24 @@ class SkinBuilder:
             first = sorted(missing)[:8]
             raise ValueError("A versão instalada do Dota não tem dependências desta arcana: " + ", ".join(first))
 
+    def _validate_model_includes(self, entries):
+        completed, visiting, payload_refs = set(), set(), {}
+        def visit(path):
+            if path in completed: return
+            if path in visiting:
+                raise ValueError('Dependência circular entre modelos da arcana: '+path)
+            data = entries[path] if path in entries else self._official_entry(path)
+            if data not in payload_refs:
+                payload_refs[data] = [ref if ref.endswith('_c') else ref+'_c'
+                    for ref in references(data) if ref.endswith(('.vmdl', '.vmdl_c'))]
+            visiting.add(path)
+            for ref in payload_refs[data]: visit(ref)
+            visiting.remove(path)
+            completed.add(path)
+        for path in entries:
+            if path.endswith('.vmdl_c'): visit(path)
+        return len(completed)
+
     def prepare(self, hero, skin_id, progress=lambda _message: None):
         style = hero == "tidehunter"
         recipe = (self.manifest.get("styles", {}).get(skin_id) if style
@@ -281,11 +330,13 @@ class SkinBuilder:
             source_path = self._extract_vpk(downloaded, folder)
             source_entries = read_single(source_path)
             entries = self._style_entries(recipe, source_entries) if style else self._hero_entries(recipe, source_entries)
+            entries = self._local_models(recipe, entries)
             progress('Compatibilizando as peças cosméticas equipadas com os slots da arcana…')
             loadout_report = self._apply_wearables(entries, hero)
             if not entries or len(entries) > MAX_RESOURCE_COUNT:
                 raise ValueError("O pacote montado está vazio ou excede o limite de recursos.")
             self._validate_references(entries)
+            loadout_report['model_include_nodes_checked'] = self._validate_model_includes(entries)
             progress("Montando e verificando o VPK local…")
             temporary_vpk = folder / "prepared.vpk"
             write_single(temporary_vpk, entries, deduplicate=True)
@@ -318,5 +369,6 @@ class SkinBuilder:
             "assembly_revision": ASSEMBLY_REVISION,
             "recipe_sha256": recipe_signature(recipe),
             "loadout_compatibility": loadout_report,
+            "local_models": recipe.get('local_models', {}),
             "status": "Pacote público baixado, filtrado e validado localmente.",
         }

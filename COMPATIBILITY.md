@@ -18,7 +18,7 @@ Antes de escrever, o app confere o conteúdo atual. Uma operação incompleta po
 
 ## Atualizações do Dota
 
-Montagens da revisão 2 compatibilizam os modelos dos cosméticos convencionais com os slots padrão usados pelo pacote de arcana. O arquivo oficial de itens é apenas lido. A revisão da montagem e a assinatura da receita invalidam caches antigos após uma atualização do Atelier. Slots de persona, modelos genéricos e modelos usados por outros heróis não são reinterpretados; efeitos ligados ao item equipado podem exigir teste visual adicional. O relatório em VALIDATION.md distingue essa verificação estrutural da validação no jogo.
+Montagens da revisão 3 compatibilizam os modelos dos cosméticos convencionais com os slots padrão usados pelo pacote de arcana. O arquivo oficial de itens é apenas lido. A revisão da montagem e a assinatura da receita invalidam caches antigos após uma atualização do Atelier. Slots de persona, modelos genéricos e modelos usados por outros heróis não são reinterpretados; efeitos ligados ao item equipado podem exigir teste visual adicional. O relatório em VALIDATION.md distingue essa verificação estrutural da validação no jogo.
 
 O atualizador funciona enquanto o Atelier está aberto e o Dota fechado. Aguarda o Steam indicar instalação concluída, verifica a estabilidade dos arquivos de origem e reconstrói os terrenos a partir do mapa padrão e do terreno oficial encontrados naquele PC. Um terreno ativo é reaplicado quando a montagem muda. Se a estrutura esperada do mapa deixar de existir, a atualização para com erro, sem publicar uma montagem incompatível.
 

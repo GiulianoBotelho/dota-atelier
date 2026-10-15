@@ -1,5 +1,13 @@
 # Alterações
 
+## 0.2.2-beta.1 — 2026-10-15
+
+- Wraith King montado com corpo e peças oficiais locais, incluindo as animações atuais; dependências comunitárias antigas removidas dessa receita. Correção visual após o crítico ainda requer reprodução no Dota.
+- Cobertura de trocas de modelo por modificadores de itens e por outros slots.
+- Includes de animação preservados e ciclos entre modelos rejeitados, incluindo o caso da Crystal Maiden.
+- VPKs importados legados não são mais reativados como fallback de uma montagem invalidada.
+- Montagem revisão 3, auditoria das 28 variantes e 40 testes. Limitações de equipamento e ausência de validação visual explicitadas na interface e no relatório.
+
 ## 0.2.1-beta.1 — 2026-10-15
 
 - Corrigida a mistura entre a arcana e cosméticos convencionais já equipados: leitura local da tabela de itens e substituição visual por slot, sem gravar inventário ou tabelas do jogo.
