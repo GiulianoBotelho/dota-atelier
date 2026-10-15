@@ -11,10 +11,10 @@ ROOT=Path(__file__).resolve().parent
 DIST=ROOT/'dist'
 BUILD=ROOT/'build'
 RUNTIME=('manager.py','desktop_ui.py','packages.py','steam_discovery.py','mod_session.py',
-         'terrain_updater.py','tide_trial.py','vpk_lab.py','skin_builder.py','app_lock.py','version.py','DotaAtelier.spec',
+         'terrain_updater.py','tide_trial.py','vpk_lab.py','skin_builder.py','cosmetic_schema.py','audit_catalog.py','app_lock.py','version.py','DotaAtelier.spec',
          'README.md','THIRD_PARTY_LICENSES.txt','Dota2PornFx-LICENSE.txt',
-         'requirements-build.txt','build_share.py','LICENSE','COMPATIBILITY.md','test_portability.py','test_updater.py',
-         '.gitignore','CHANGELOG.md','.github/workflows/verify.yml')
+         'requirements-build.txt','build_share.py','LICENSE','COMPATIBILITY.md','test_portability.py','test_updater.py','test_cosmetic_schema.py',
+         '.gitignore','CHANGELOG.md','VALIDATION.md','.github/workflows/verify.yml')
 IMAGE_SUFFIXES={'.png','.webp','.jpg','.jpeg'}
 
 def safe_zip_tree(zip_path,base,folder,prefix=''):
@@ -58,6 +58,7 @@ def main():
                        cwd=source,check=True)
         shutil.copy2(source/'README.md',dist/'DotaAtelier'/'README.md')
         shutil.copy2(source/'COMPATIBILITY.md',dist/'DotaAtelier'/'COMPATIBILITY.md')
+        shutil.copy2(source/'VALIDATION.md',dist/'DotaAtelier'/'VALIDATION.md')
         shutil.copy2(source/'LICENSE',dist/'DotaAtelier'/'LICENSE')
         shutil.copy2(source/'THIRD_PARTY_LICENSES.txt',dist/'DotaAtelier'/'THIRD_PARTY_LICENSES.txt')
         shutil.copy2(source/'Dota2PornFx-LICENSE.txt',dist/'DotaAtelier'/'Dota2PornFx-LICENSE.txt')

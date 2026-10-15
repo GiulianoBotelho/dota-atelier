@@ -18,6 +18,8 @@ Antes de escrever, o app confere o conteúdo atual. Uma operação incompleta po
 
 ## Atualizações do Dota
 
+Montagens da revisão 2 compatibilizam os modelos dos cosméticos convencionais com os slots padrão usados pelo pacote de arcana. O arquivo oficial de itens é apenas lido. A revisão da montagem e a assinatura da receita invalidam caches antigos após uma atualização do Atelier. Slots de persona, modelos genéricos e modelos usados por outros heróis não são reinterpretados; efeitos ligados ao item equipado podem exigir teste visual adicional. O relatório em VALIDATION.md distingue essa verificação estrutural da validação no jogo.
+
 O atualizador funciona enquanto o Atelier está aberto e o Dota fechado. Aguarda o Steam indicar instalação concluída, verifica a estabilidade dos arquivos de origem e reconstrói os terrenos a partir do mapa padrão e do terreno oficial encontrados naquele PC. Um terreno ativo é reaplicado quando a montagem muda. Se a estrutura esperada do mapa deixar de existir, a atualização para com erro, sem publicar uma montagem incompatível.
 
 Arcanas vêm de ZIPs de uma revisão fixa do projeto Dota2PornFxWeb. O download exige tamanho, SHA-256 e hash Git exatos. Recursos necessários são selecionados por receita e complementados com dados oficiais locais. Uma atualização dos VPKs oficiais invalida a montagem em cache: na próxima ativação, o app prepara novamente usando o ZIP validado em cache ou baixa a fonte se necessário. O app não altera automaticamente uma skin que já está ativa para trocar de versão da fonte comunitária.
@@ -39,7 +41,7 @@ Mesmo sem alterar componentes de segurança, sobrepor recursos do cliente é uma
 Com Python 3.11 e as dependências de build instaladas:
 
 ```powershell
-python -m unittest test_portability test_updater -v
+python -m unittest test_portability test_updater test_cosmetic_schema -v
 python build_share.py
 ```
 

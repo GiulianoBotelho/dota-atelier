@@ -22,6 +22,14 @@ O VPK montado fica em `%LOCALAPPDATA%\\DotaAtelier\\skins`. O Atelier verifica C
 
 Fonte pública de montagem: [Dota2PornFxWeb](https://github.com/h6rd/Dota2PornFxWeb). O botão **Catálogo público** abre o repositório de origem. O app não executa instaladores de terceiros.
 
+Desde a versão 0.2.1, a montagem lê a tabela oficial de itens para substituir visualmente também os cosméticos convencionais já equipados, pelo modelo esperado de cada slot. Essa tabela não é alterada nem incluída no VPK. Modelos genéricos ou compartilhados entre heróis são preservados. Personas ficam fora dessa compatibilização; partículas de itens e todas as combinações possíveis ainda precisam de conferência no jogo. Veja o [relatório de validação por herói](VALIDATION.md).
+
+## Atualizar o aplicativo
+
+Feche o Atelier, baixe **DotaAtelier-Compartilhar.zip** da release nova e extraia a pasta inteira. Abra o novo **DotaAtelier.exe** junto da sua pasta `_internal`. Não substitua somente o executável. Backups e sessão permanecem em `%LOCALAPPDATA%\\DotaAtelier`; não apague nem transfira essa pasta entre PCs.
+
+Na versão 0.2.1, as montagens antigas precisam ser refeitas. Se uma arcana já estiver ativa, use **Atualizar arcana**, com o Dota fechado, para aplicar a montagem nova. Apenas atualizar o aplicativo não troca automaticamente o VPK que já está ativo.
+
 ## O que o app altera
 
 Para ativar um visual, o Atelier instala um VPK extra na camada de idioma de áudio do Dota. Quando o áudio está em inglês, a montagem atual usa a camada russa e registra a mudança de `AudioLanguage` em `dota/cfg/boot.vcfg`; a interface (`UILanguage`) é preservada. Desativar o último visual restaura o arquivo original byte a byte.
@@ -48,7 +56,7 @@ Para compilar, instale Python 3.11 e execute:
 
 ```powershell
 python -m pip install -r requirements-build.txt
-python -m unittest test_portability test_updater -v
+python -m unittest test_portability test_updater test_cosmetic_schema -v
 python build_share.py
 ```
 

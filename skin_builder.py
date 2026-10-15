@@ -14,6 +14,7 @@ from zipfile import ZipFile
 
 from tide_trial import sha
 from vpk_lab import index, read_entry, read_single, references, write_single
+from cosmetic_schema import ASSEMBLY_REVISION, read_schema, wearable_aliases, recipe_signature, item_model_owners
 
 
 MAX_ZIP_BYTES = 120 * 1024 * 1024
@@ -25,6 +26,7 @@ VPK_SUFFIXES = {".vmdl_c", ".vtex_c", ".vmat_c", ".vpcf_c", ".vsndevts_c",
 
 
 class SkinBuilder:
+    _schema_cache = None
     def __init__(self, game, library, manifest_path=None):
         self.game = Path(game).resolve()
         self.library = Path(library).resolve()
@@ -170,6 +172,31 @@ class SkinBuilder:
             entries[target] = payload
         return entries
 
+    def _apply_wearables(self, entries, hero):
+        from manager import PORTRAIT_MODELS
+        progress_schema = self._official_entry('scripts/items/items_game.txt')
+        schema_key = (str(self.game), sha(progress_schema))
+        cached = SkinBuilder._schema_cache
+        if cached is None or cached[0] != schema_key:
+            schema = read_schema(progress_schema)
+            cached = (schema_key, schema, item_model_owners(schema))
+            SkinBuilder._schema_cache = cached
+        available = set(entries)
+        for _path, (_base, indexed) in self._official_context(): available.update(indexed)
+        base_model = PORTRAIT_MODELS.get(hero)
+        base_model = base_model+'_c' if base_model else None
+        aliases, report = wearable_aliases(cached[1], hero, available, base_model, cached[2])
+        missing = []
+        for source, target in aliases.items():
+            if source not in available:
+                missing.append(source)
+                continue
+            if target not in entries: entries[target] = self._official_entry(target)
+            entries[source] = entries[target]
+        report['missing_item_models'] = sorted(missing)
+        report['applied_aliases'] = len(aliases)-len(missing)
+        return report
+
     @staticmethod
     def _replace_hero_block(data, source_model, hero_model):
         from manager import _kv_block_span
@@ -219,9 +246,12 @@ class SkinBuilder:
         for _path, (_base, indexed) in self._official_context():
             available.update(indexed)
         missing = set()
+        visited = set()
         for resource, payload in entries.items():
             if not resource.endswith((".vmdl_c", ".vmat_c", ".vpcf_c")):
                 continue
+            if payload in visited: continue
+            visited.add(payload)
             for reference in references(payload):
                 if reference not in available and reference + "_c" not in available:
                     missing.add(reference)
@@ -251,12 +281,14 @@ class SkinBuilder:
             source_path = self._extract_vpk(downloaded, folder)
             source_entries = read_single(source_path)
             entries = self._style_entries(recipe, source_entries) if style else self._hero_entries(recipe, source_entries)
+            progress('Compatibilizando as peças cosméticas equipadas com os slots da arcana…')
+            loadout_report = self._apply_wearables(entries, hero)
             if not entries or len(entries) > MAX_RESOURCE_COUNT:
                 raise ValueError("O pacote montado está vazio ou excede o limite de recursos.")
             self._validate_references(entries)
             progress("Montando e verificando o VPK local…")
             temporary_vpk = folder / "prepared.vpk"
-            write_single(temporary_vpk, entries)
+            write_single(temporary_vpk, entries, deduplicate=True)
             from manager import validate_vpk
             validate_vpk(temporary_vpk, "skin", hero=hero, game_path=self.game)
             if initial_stamps != source_stamps() or any(
@@ -283,5 +315,8 @@ class SkinBuilder:
             "source_sha256": recipe["source_sha256"],
             "game_path": str(self.game),
             "official_sources": official_sources,
+            "assembly_revision": ASSEMBLY_REVISION,
+            "recipe_sha256": recipe_signature(recipe),
+            "loadout_compatibility": loadout_report,
             "status": "Pacote público baixado, filtrado e validado localmente.",
         }

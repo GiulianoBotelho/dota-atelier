@@ -74,7 +74,7 @@ def read_single(path):
     return result
 
 
-def write_single(path, entries):
+def write_single(path, entries, deduplicate=False):
     groups = collections.defaultdict(lambda: collections.defaultdict(dict))
     for resource, payload in entries.items():
         if '\\' in resource or ':' in resource or any(x in ('', '.', '..') for x in resource.split('/')):
@@ -83,6 +83,7 @@ def write_single(path, entries):
         stem, ext = name.rsplit('.', 1)
         groups[ext][folder][stem] = payload
     tree, data = bytearray(), bytearray()
+    locations = {}
     def string(s): tree.extend(s.encode()+b'\0')
     for ext in sorted(groups):
         string(ext)
@@ -90,8 +91,12 @@ def write_single(path, entries):
             string(folder)
             for name, payload in sorted(groups[ext][folder].items()):
                 string(name)
-                tree.extend(struct.pack('<IHHIIH', zlib.crc32(payload)&0xffffffff, 0, 0x7fff, len(data), len(payload), 0xffff))
-                data.extend(payload)
+                offset = locations.get(payload) if deduplicate else None
+                if offset is None:
+                    offset = len(data)
+                    data.extend(payload)
+                    if deduplicate: locations[payload] = offset
+                tree.extend(struct.pack('<IHHIIH', zlib.crc32(payload)&0xffffffff, 0, 0x7fff, offset, len(payload), 0xffff))
             string('')
         string('')
     string('')

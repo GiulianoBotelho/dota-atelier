@@ -15,13 +15,14 @@ import zlib
 from tide_trial import Trial, APPROVED_SHA
 from packages import CATALOG
 from steam_discovery import find_dota_installations, normalize_game_path
+from cosmetic_schema import ASSEMBLY_REVISION, recipe_signature
 
 GUIDE = 'https://steamcommunity.com/sharedfiles/filedetails/?id=1664733222'
 TERRAINS = ['Desert Terrain', 'Immortal Gardens', "Reef’s Edge", 'Emerald Abyss', 'Overgrown Empire', 'Sanctum of the Divine', 'Crownfall', "The King’s New Journey", 'Winter', 'Spring', 'Summer', 'Autumn']
 ARCANAS = [('Tidehunter', 'Maw of the Megalodon', 'tidehunter'), ('Vengeful Spirit', 'The Resurrection of Shen', 'vengefulspirit'), ('Skywrath Mage', 'The Devotions of Dragonus', 'skywrath_mage'), ('Razor', 'Voidstorm Asylum', 'razor'), ('Faceless Void', 'Claszian Apostasy', 'faceless_void'), ('Drow Ranger', 'Dread Retribution', 'drow_ranger'), ('Spectre', 'Phantom Advent', 'spectre'), ('Windranger', 'Compass of the Rising Gale', 'windrunner'), ('Queen of Pain', 'The Eminence of Ristul', 'queenofpain'), ('Wraith King', 'The One True King', 'skeleton_king'), ('Earthshaker', 'Planetfall', 'earthshaker'), ('Ogre Magi', 'Flockheart’s Gamble', 'ogre_magi'), ('Rubick', 'The Magus Cypher', 'rubick'), ('Pudge', 'Feast of Abscession', 'pudge'), ('Juggernaut', 'Bladeform Legacy', 'juggernaut'), ('Monkey King', 'Great Sage’s Reckoning', 'monkey_king'), ('Io', 'Benevolent Companion', 'wisp'), ('Zeus', 'Tempest Helm of the Thundergod', 'zuus'), ('Crystal Maiden', 'Frost Avalanche', 'crystal_maiden'), ('Phantom Assassin', 'Manifold Paradox', 'phantom_assassin'), ('Shadow Fiend', 'Demon Eater', 'nevermore'), ('Techies', 'Swine of the Sunken Galley', 'techies'), ('Terrorblade', 'Fractal Horns of Inner Abysm', 'terrorblade'), ('Legion Commander', 'Blades of Voth Domosh', 'legion_commander'), ('Lina', 'Fiery Soul of the Slayer', 'lina')]
 
 SKIN_EXTENSIONS = {'vmdl_c','vtex_c','vmat_c','vpcf_c','vsndevts_c','vsnd_c','vanim_c','vmesh_c','vagrp_c','vseq_c','vsnap_c','vphys_c','vents_c','vwnod_c','vrman_c'}
-PORTRAIT_MODELS = {'tidehunter':'models/heroes/tidehunter/tidehunter.vmdl','vengefulspirit':'models/heroes/vengeful/vengeful.vmdl','skywrath_mage':'models/heroes/skywrath_mage/skywrath_mage.vmdl','razor':'models/heroes/razor/razor.vmdl','faceless_void':'models/heroes/faceless_void/faceless_void.vmdl','drow_ranger':'models/heroes/drow_ranger/drow_ranger.vmdl','spectre':'models/heroes/spectre/spectre.vmdl','windrunner':'models/heroes/windrunner/windrunner.vmdl','queenofpain':'models/heroes/queenofpain/queenofpain.vmdl','skeleton_king':'models/heroes/wraith_king/wraith_king.vmdl','earthshaker':'models/heroes/earthshaker/earthshaker.vmdl','ogre_magi':'models/heroes/ogre_magi/ogre_magi.vmdl','rubick':'models/heroes/rubick/rubick.vmdl','pudge':'models/heroes/pudge/pudge.vmdl','juggernaut':'models/heroes/juggernaut/juggernaut.vmdl','monkey_king':'models/heroes/monkey_king/monkey_king.vmdl','wisp':'models/heroes/wisp/wisp.vmdl','zuus':'models/heroes/zeus/zeus.vmdl','crystal_m':'models/heroes/crystal_maiden/crystal_maiden.vmdl','phantom_assassin':'models/heroes/phantom_assassin/phantom_assassin.vmdl','nevermore':'models/heroes/nevermore/nevermore.vmdl','techies':'models/heroes/techies/techies.vmdl','terrorblade':'models/heroes/terrorblade/terrorblade.vmdl','legion_commander':'models/heroes/legion_commander/legion_commander.vmdl','lina':'models/heroes/lina/lina.vmdl','axe':'models/heroes/axe/axe.vmdl'}
+PORTRAIT_MODELS = {'tidehunter':'models/heroes/tidehunter/tidehunter.vmdl','vengefulspirit':'models/heroes/vengeful/vengeful.vmdl','skywrath_mage':'models/heroes/skywrath_mage/skywrath_mage.vmdl','razor':'models/heroes/razor/razor.vmdl','faceless_void':'models/heroes/faceless_void/faceless_void.vmdl','drow_ranger':'models/heroes/drow/drow_base.vmdl','spectre':'models/heroes/spectre/spectre.vmdl','windrunner':'models/heroes/windrunner/windrunner.vmdl','queenofpain':'models/heroes/queenofpain/queenofpain.vmdl','skeleton_king':'models/heroes/wraith_king/wraith_king.vmdl','earthshaker':'models/heroes/earthshaker/earthshaker.vmdl','ogre_magi':'models/heroes/ogre_magi/ogre_magi.vmdl','rubick':'models/heroes/rubick/rubick.vmdl','pudge':'models/heroes/pudge/pudge.vmdl','juggernaut':'models/heroes/juggernaut/juggernaut.vmdl','monkey_king':'models/heroes/monkey_king/monkey_king.vmdl','wisp':'models/heroes/wisp/wisp.vmdl','zuus':'models/heroes/zeus/zeus.vmdl','crystal_maiden':'models/heroes/crystal_maiden/crystal_maiden.vmdl','phantom_assassin':'models/heroes/phantom_assassin/phantom_assassin.vmdl','nevermore':'models/heroes/shadow_fiend/shadow_fiend.vmdl','techies':'models/heroes/techies/techies.vmdl','terrorblade':'models/heroes/terrorblade/terrorblade.vmdl','legion_commander':'models/heroes/legion_commander/legion_commander.vmdl','lina':'models/heroes/lina/lina.vmdl','axe':'models/heroes/axe/axe.vmdl'}
 
 def _kv_block_span(data, key):
     import re
@@ -114,7 +115,7 @@ def validate_vpk(path, kind='map', hero=None, game_path=None):
                     allowed = resource.startswith(('maps/dota/', 'maps/dota_')) or (folder == 'maps' and name == 'dota')
                 if not allowed or '..' in resource or '\\' in resource or ':' in resource or resource.startswith('/'):
                     raise ValueError(f'Recurso fora do mapa: {resource}')
-                if ext not in {'gnv', 'vhcg', 'vgrass', 'trm', 'vmap_c', 'vwrld_c', 'vwnod_c', 'vphys_c', 'vmat_c', 'vtex_c', 'vmdl_c', 'vmesh_c', 'vpcf_c', 'vsnd_c', 'vrman_c', 'vents_c', 'vvis_c', 'vanim_c', 'vagrp_c', 'vseq_c', 'nav', 'nav_c'} and not (kind == 'skin' and ((ext in {'vsndevts_c','vsnap_c'} and (resource.startswith('soundevents/') or known_skin)) or (resource == 'scripts/npc/portraits.txt' and allowed))):
+                if not ((kind == 'skin' and (ext in SKIN_EXTENSIONS or (resource == 'scripts/npc/portraits.txt' and allowed))) or (kind != 'skin' and ext in {'gnv', 'vhcg', 'vgrass', 'trm', 'vmap_c', 'vwrld_c', 'vwnod_c', 'vphys_c', 'vmat_c', 'vtex_c', 'vmdl_c', 'vmesh_c', 'vpcf_c', 'vsnd_c', 'vrman_c', 'vents_c', 'vvis_c', 'vanim_c', 'vagrp_c', 'vseq_c', 'nav', 'nav_c'})):
                     raise ValueError(f'Tipo de recurso não permitido: {ext}')
                 if archive != 0x7fff or terminator != 0xffff or pos + preload > end or end + offset + length > data_end:
                     raise ValueError('Pacote externo, truncado ou inválido.')
@@ -157,6 +158,7 @@ class Library:
         self.state.setdefault('imported_skins', {})
         self.state.setdefault('generated_skins', {})
         self._source_hash_cache = {}
+        self._skin_recipes = None
         previous_game_path = self.state.get('game_path')
         configured = previous_game_path
         if not configured and self.state.get('target'):
@@ -264,6 +266,13 @@ class Library:
     def generated_skin(self, hero, skin_id):
         item = self.state.get('generated_skins', {}).get(f'{hero}:{skin_id}')
         if not item: return None
+        if item.get('assembly_revision') != ASSEMBLY_REVISION: return None
+        if self._skin_recipes is None:
+            assets = Path(getattr(sys, '_MEIPASS', Path(__file__).parent))/'assets'
+            self._skin_recipes = json.loads((assets/'skin-recipes.json').read_text('utf-8'))
+        recipe = (self._skin_recipes['styles'].get(skin_id) if hero=='tidehunter'
+                  else self._skin_recipes['heroes'].get(hero))
+        if recipe is None or item.get('recipe_sha256') != recipe_signature(recipe): return None
         key = item.get('sha256', '')
         if len(key) != 64 or any(c not in '0123456789abcdef' for c in key):
             raise ValueError('Hash do pacote automático inválido.')

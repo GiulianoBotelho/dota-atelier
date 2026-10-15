@@ -19,7 +19,7 @@ jobs:
       - name: Install build dependencies
         run: python -m pip install -r requirements-build.txt
       - name: Verify restoration, updates and clean installation
-        run: python -m unittest test_portability test_updater -v
+        run: python -m unittest test_portability test_updater test_cosmetic_schema -v
       - name: Build archives without local game files
         run: python build_share.py
       - uses: actions/upload-artifact@v4

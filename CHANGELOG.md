@@ -1,5 +1,15 @@
 # Alterações
 
+## 0.2.1-beta.1 — 2026-10-15
+
+- Corrigida a mistura entre a arcana e cosméticos convencionais já equipados: leitura local da tabela de itens e substituição visual por slot, sem gravar inventário ou tabelas do jogo.
+- Proteção de modelos genéricos e de caminhos compartilhados por vários heróis; personas não são convertidas.
+- Correção dos caminhos-base de Drow, Shadow Fiend e Crystal Maiden.
+- Correção da validação de snapshots de partículas e eventos de voz em pacotes remontados, mantendo a rejeição de scripts e tabelas de itens.
+- Revisão e assinatura de receita invalidam montagens antigas; botão Atualizar arcana disponível para pacotes legados ativos.
+- VPKs reutilizam os bytes de modelos idênticos para evitar duplicar cada peça para todos os cosméticos.
+- Auditoria de todas as 28 variantes e novos testes de modelos equipados, estilos, prefabs, caches e modelos compartilhados. Conferência visual no jogo continua necessária; nenhuma garantia de 100% de todas as combinações é anunciada.
+
 ## 0.2.0-beta.1 — 2026-10-15
 
 - Distribuição portátil Windows x64, sem VPKs, sessões, backups ou caminhos da máquina de desenvolvimento.

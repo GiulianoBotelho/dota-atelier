@@ -18,6 +18,7 @@ from skin_builder import SkinBuilder
 from terrain_updater import TerrainUpdater
 from tide_trial import PROTECTED, sha
 from vpk_lab import write_single
+from cosmetic_schema import ASSEMBLY_REVISION, recipe_signature
 
 
 class PortabilityTests(unittest.TestCase):
@@ -57,6 +58,8 @@ class PortabilityTests(unittest.TestCase):
         destination.write_bytes(path.read_bytes())
         return self.library.register_generated_skin({'hero': 'tidehunter', 'id': 'megalodon', 'sha256': key,
             'local_file': 'skins/'+key+'.vpk', 'game_path': str(self.game.resolve()), 'resources': 1,
+            'assembly_revision': ASSEMBLY_REVISION,
+            'recipe_sha256': recipe_signature(json.loads((Path(__file__).parent/'assets/skin-recipes.json').read_text('utf-8'))['styles']['megalodon']),
             'official_sources': {'dota/pak01_dir.vpk': sha((self.game/'dota/pak01_dir.vpk').read_bytes())}})
 
     @patch('mod_session.closed')
@@ -101,6 +104,15 @@ class PortabilityTests(unittest.TestCase):
         self.assertIsNotNone(self.library.generated_skin('tidehunter', 'megalodon'))
         (self.game/'dota/pak01_dir.vpk').write_bytes(b'official game update')
         self.assertIsNone(self.library.generated_skin('tidehunter', 'megalodon'))
+
+    def test_older_assembly_and_changed_recipe_are_not_reused(self):
+        self.skin()
+        record=self.library.state['generated_skins']['tidehunter:megalodon']
+        record.pop('assembly_revision')
+        self.assertIsNone(self.library.generated_skin('tidehunter','megalodon'))
+        record['assembly_revision']=ASSEMBLY_REVISION
+        record['recipe_sha256']='0'*64
+        self.assertIsNone(self.library.generated_skin('tidehunter','megalodon'))
 
     @patch('mod_session.closed')
     def test_external_boot_change_is_preserved(self, _):
@@ -181,7 +193,7 @@ class PortabilityTests(unittest.TestCase):
         archive = self.root/'source.zip'
         with ZipFile(archive, 'w') as output: output.write(source, 'hero.vpk')
         def simulate_update(_entries): (self.game/'dota/pak01_dir.vpk').write_bytes(b'new official bytes')
-        with patch.object(builder, '_download_zip', return_value=archive), patch.object(builder, '_validate_references', side_effect=simulate_update):
+        with patch.object(builder, '_download_zip', return_value=archive), patch.object(builder, '_apply_wearables', return_value={}), patch.object(builder, '_validate_references', side_effect=simulate_update):
             with self.assertRaisesRegex(ValueError, 'atualizou durante'):
                 builder.prepare('razor', 'razor')
         self.assertFalse(list(builder.skin_dir.glob('*.vpk')))
